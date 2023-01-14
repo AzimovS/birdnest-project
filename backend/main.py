@@ -20,18 +20,22 @@ def db_connection():
 def update_data(interval):
     conn = db_connection()
     cur = conn.cursor()
+    cx, cy = 250000, 250000
     Timer(interval, update_data, [interval]).start()
     url = 'https://assignments.reaktor.com/birdnest/drones'
     http = urllib3.PoolManager()
     response = http.request('GET', url)
     try:
         data = xmltodict.parse(response.data)
-        sql = """INSERT INTO drones (serialNumber, posx, posy, time) VALUES (?, ?, ?, ?)"""
+        sql = """INSERT INTO drones (serialNumber, posx, posy, time, distFromCentre) VALUES (?, ?, ?, ?, ?)"""
         for drone in data["report"]['capture']['drone']:
-            cursor = cur.execute(sql, (drone['serialNumber'], drone['positionX'], drone['positionY'], data["report"]['capture']['@snapshotTimestamp']))
-            conn.commit()
+            posX, posY = float(drone['positionX']), float(drone['positionY'])
+            distFromCentre = ((posX - cx) ** 2 + (posY - cy) ** 2) ** 0.5
+            if distFromCentre < 100000:
+                cursor = cur.execute(sql, (drone['serialNumber'], posX, posY, data["report"]['capture']['@snapshotTimestamp'], distFromCentre))
+                conn.commit()
     except:
-        print("Failed to parse xml from response (%s)")
+        print("Failed to parse xml from response")
     return data
 
 

@@ -6,7 +6,8 @@ sql_query = """ CREATE TABLE drones (
     serialNumber text NOT NULL,
     posx text NOT NULL,
     posy text NOT NULL,
-    time text NOT NULL
+    time text NOT NULL,
+    distFromCentre text NOT NULL
 ) """
 
 conn.execute(sql_query)
