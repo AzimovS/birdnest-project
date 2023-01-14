@@ -1,5 +1,5 @@
 from threading import Timer
-from flask import Flask
+from flask import Flask, jsonify
 import sqlite3
 import urllib3
 import xmltodict
@@ -67,12 +67,33 @@ def clean_data(interval):
 update_data(2)
 
 # remove data to avoid overflow
-clean_data(59)
+clean_data(60)
 
 
 @app.route("/")
 def index():
-    return "HI"
+    conn = db_connection()
+    cur = conn.cursor()
+    cur.execute("""SELECT tbl.* FROM drones tbl INNER JOIN
+  (
+    SELECT serialNumber, MIN(distFromCentre) distFromCentre
+    FROM drones
+    GROUP BY serialNumber
+  ) tbl1
+  ON tbl1.serialNumber = tbl.serialNumber
+WHERE tbl1.distFromCentre = tbl.distFromCentre""")
+    rows = cur.fetchall()
+    print(rows)
+    dct = {}
+    for (i, row) in enumerate(rows):
+        dct[i] = {}
+        dct[i]["serialNumber"] = row[0]
+        dct[i]["posX"] = row[1]
+        dct[i]["posY"] = row[2]
+        dct[i]["time"] = row[3]
+        dct[i]["distanceFromCentre"] = row[4]
+    print(dct)
+    return jsonify(dct)
 
 if __name__ == "__main__":
     app.run(debug=False)
