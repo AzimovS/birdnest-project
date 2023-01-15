@@ -33,6 +33,7 @@ FIND_VIOLATED_SQL = """SELECT tbl.* FROM drones tbl INNER JOIN
                         ON tbl1.serialNumber = tbl.serialNumber
                         WHERE tbl1.distFromCentre = tbl.distFromCentre"""
 
+
 def db_connection():
     conn = None
     try:
@@ -45,15 +46,17 @@ def db_connection():
         print("Something went wrong with db")
     return conn
 
-def get_pilot(serialNumber): 
+
+def get_pilot(serialNumber):
     url = f'{URL_PILOT}{serialNumber}'
     try:
         uResponse = requests.get(url)
     except requests.ConnectionError:
-       print("Connection Error")
+        print("Connection Error")
     Jresponse = uResponse.text
     data = json.loads(Jresponse)
     return f"{data['firstName']} {data['lastName']}", data['email'], data['phoneNumber']
+
 
 def update_data(interval):
     Timer(interval, update_data, [interval]).start()
@@ -70,8 +73,10 @@ def update_data(interval):
             timestamp = data["report"]['capture']['@snapshotTimestamp']
             distFromCentre = ((posX - cx) ** 2 + (posY - cy) ** 2) ** 0.5
             if distFromCentre < 100000:
-                pilot_name, pilot_email, pilot_phoneNumber = get_pilot(drone['serialNumber'])
-                cursor = cur.execute(INSERT_SQL, (drone['serialNumber'], posX, posY, timestamp, distFromCentre, pilot_name, pilot_email, pilot_phoneNumber))
+                pilot_name, pilot_email, pilot_phoneNumber = get_pilot(
+                    drone['serialNumber'])
+                cursor = cur.execute(INSERT_SQL, (drone['serialNumber'], posX, posY,
+                                     timestamp, distFromCentre, pilot_name, pilot_email, pilot_phoneNumber))
                 conn.commit()
     except:
         print("Failed to parse xml from response")
@@ -97,12 +102,6 @@ def clean_data(interval):
     except:
         print("Failed to delete entries")
 
-# update data every two second
-update_data(2)
-
-# remove data to avoid overflow
-clean_data(60)
-    
 
 @app.route("/")
 def index():
@@ -126,5 +125,10 @@ def index():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+
 if __name__ == "__main__":
+    # update data every two second
+    update_data(2)
+    # remove data to avoid overflow
+    clean_data(60)
     app.run(debug=False)
