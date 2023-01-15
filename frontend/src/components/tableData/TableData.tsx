@@ -16,6 +16,26 @@ const columns: GridColDef[] = [
     headerName: 'Distance From Centre',
     flex: 0.5,
   },
+  {
+    field: 'time',
+    headerName: 'Detected at',
+    flex: 0.5,
+  },
+  {
+    field: 'name',
+    headerName: 'Name',
+    flex: 0.5,
+  },
+  {
+    field: 'email',
+    headerName: 'Email',
+    flex: 0.5,
+  },
+  {
+    field: 'phoneNumber',
+    headerName: 'phoneNumber',
+    flex: 0.5,
+  },
 ];
 
 type Props = {

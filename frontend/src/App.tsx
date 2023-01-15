@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import TableData from './components/tableData/TableData';
 import CssBaseline from '@mui/material/CssBaseline';
-// import './App.css';
 import { getDrones } from './services/drones';
 import { Drone } from './types';
 import {
   Box,
-  Button,
   Container,
   createTheme,
   Grid,
@@ -14,78 +12,31 @@ import {
   ThemeProvider,
   Toolbar,
 } from '@mui/material';
+import { format } from 'date-fns';
 
 const mdTheme = createTheme();
 
 function App() {
   const [drones, setDrones] = useState<Drone[]>([]);
+  const [time, setTime] = useState(Date.now());
 
   useEffect(() => {
-    getDrones().then((res) => {
-      setDrones(res);
-      console.log(res);
-    });
+    const interval = setInterval(() => {
+      setTime(Date.now());
+
+      getDrones().then((res) => {
+        setDrones(res);
+        console.log(res);
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
     <ThemeProvider theme={mdTheme}>
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
-        {/* <Button variant="contained">Hello World</Button> */}
-        {/* <AppBar position="absolute" open={open}>
-          <Toolbar
-            sx={{
-              pr: '24px', // keep right padding when drawer closed
-            }}
-          >
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="open drawer"
-              onClick={toggleDrawer}
-              sx={{
-                marginRight: '36px',
-                ...(open && { display: 'none' }),
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography
-              component="h1"
-              variant="h6"
-              color="inherit"
-              noWrap
-              sx={{ flexGrow: 1 }}
-            >
-              Dashboard
-            </Typography>
-            <IconButton color="inherit">
-              <Badge badgeContent={4} color="secondary">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Toolbar>
-        </AppBar> */}
-        {/* <Drawer variant="permanent" open={open}>
-          <Toolbar
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              px: [1],
-            }}
-          >
-            <IconButton onClick={toggleDrawer}>
-              <ChevronLeftIcon />
-            </IconButton>
-          </Toolbar>
-          <Divider />
-          <List component="nav">
-            {mainListItems}
-            <Divider sx={{ my: 1 }} />
-            {secondaryListItems}
-          </List>
-        </Drawer> */}
         <Box
           component='main'
           sx={{
@@ -111,6 +62,10 @@ function App() {
                   }}
                 >
                   <h3>Pilots who recently violated the NDZ perimeter.</h3>
+                  <p>
+                    The last updated at {format(time, 'dd.MM.yyyy HH:mm:ss')}.
+                    Updates every 5 seconds
+                  </p>
                   <TableData drones={drones} />
                 </Paper>
               </Grid>

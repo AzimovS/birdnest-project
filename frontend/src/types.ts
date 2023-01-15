@@ -4,4 +4,7 @@ export interface Drone {
   posY: string;
   time: string;
   distanceFromCetnre: string;
+  email?: string;
+  name?: string;
+  phoneNumber?: string;
 }
