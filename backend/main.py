@@ -102,9 +102,10 @@ def index():
         dct["posX"] = row[1]
         dct["posY"] = row[2]
         dct["time"] = row[3]
-        dct['name'] = row[4]
-        dct['email'] = row[5]
-        dct['phoneNumber'] = row[6]
+        dct['distanceFromCentre'] = row[4]
+        dct['name'] = row[5]
+        dct['email'] = row[6]
+        dct['phoneNumber'] = row[7]
         drones.append(dct)
     response = jsonify(drones)
     response.headers.add('Access-Control-Allow-Origin', '*')
