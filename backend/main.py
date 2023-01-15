@@ -8,19 +8,11 @@ import xmltodict
 import os
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'MLXH243GssUWwKdTWS7FDhdwYF56wPj8'
 
-
-app.config['SECRET_KEY'] = 'MLXH243GssUWwKdTWS7FDhdwYF56wPj8'  # TO DO hide it
-
-def db_connection():
-
-    conn = None
-    try:
-        if os.path.exists('drones.db'):
-            conn = sqlite3.connect('drones.db')
-        else:
-            conn = sqlite3.connect('drones.db')
-            sql_query = """ CREATE TABLE drones (
+URL_DRONE = "https://assignments.reaktor.com/birdnest/drones"
+URL_PILOT = "https://assignments.reaktor.com/birdnest/pilots/"
+CREATE_SQL = """ CREATE TABLE drones (
                 serialNumber text NOT NULL,
                 posx text NOT NULL,
                 posy text NOT NULL,
@@ -30,53 +22,68 @@ def db_connection():
                 email text NOT NULL,
                 phoneNumber text not NULL
             ) """
-            conn.execute(sql_query)
+INSERT_SQL = """INSERT INTO drones (serialNumber, posx, posy, time, distFromCentre, name, email, phoneNumber) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
+FIND_TIME_SQL = """SELECT MAX(time) FROM drones"""
+FIND_VIOLATED_SQL = """SELECT tbl.* FROM drones tbl INNER JOIN
+                        (
+                        SELECT serialNumber, MIN(distFromCentre) distFromCentre
+                        FROM drones
+                        GROUP BY serialNumber
+                        ) tbl1
+                        ON tbl1.serialNumber = tbl.serialNumber
+                        WHERE tbl1.distFromCentre = tbl.distFromCentre"""
+
+def db_connection():
+    conn = None
+    try:
+        if os.path.exists('drones.db'):
+            conn = sqlite3.connect('drones.db')
+        else:
+            conn = sqlite3.connect('drones.db')
+            conn.execute(CREATE_SQL)
     except:
         print("Something went wrong with db")
     return conn
 
 def get_pilot(serialNumber): 
-    url = f'https://assignments.reaktor.com/birdnest/pilots/{serialNumber}'
+    url = f'{URL_PILOT}{serialNumber}'
     try:
         uResponse = requests.get(url)
     except requests.ConnectionError:
-       return "Connection Error"  
+       print("Connection Error")
     Jresponse = uResponse.text
     data = json.loads(Jresponse)
     return f"{data['firstName']} {data['lastName']}", data['email'], data['phoneNumber']
 
 def update_data(interval):
+    Timer(interval, update_data, [interval]).start()
     conn = db_connection()
     cur = conn.cursor()
     cx, cy = 250000, 250000
-    Timer(interval, update_data, [interval]).start()
-    url = 'https://assignments.reaktor.com/birdnest/drones'
+    url = URL_DRONE
     http = urllib3.PoolManager()
     response = http.request('GET', url)
     try:
         data = xmltodict.parse(response.data)
-        sql = """INSERT INTO drones (serialNumber, posx, posy, time, distFromCentre, name, email, phoneNumber) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
         for drone in data["report"]['capture']['drone']:
             posX, posY = float(drone['positionX']), float(drone['positionY'])
             timestamp = data["report"]['capture']['@snapshotTimestamp']
             distFromCentre = ((posX - cx) ** 2 + (posY - cy) ** 2) ** 0.5
             if distFromCentre < 100000:
                 pilot_name, pilot_email, pilot_phoneNumber = get_pilot(drone['serialNumber'])
-                cursor = cur.execute(sql, (drone['serialNumber'], posX, posY, timestamp, distFromCentre, pilot_name, pilot_email, pilot_phoneNumber))
+                cursor = cur.execute(INSERT_SQL, (drone['serialNumber'], posX, posY, timestamp, distFromCentre, pilot_name, pilot_email, pilot_phoneNumber))
                 conn.commit()
     except:
         print("Failed to parse xml from response")
-    return data
 
 
 def clean_data(interval):
+    Timer(interval, clean_data, [interval]).start()
     conn = db_connection()
     cur = conn.cursor()
-    Timer(interval, clean_data, [interval]).start()
     try:
         # took the max time, because the time on server can be different from the given time.
-        sql = f'SELECT MAX(time) FROM drones'
-        recent_date = cur.execute(sql).fetchone()[0]
+        recent_date = cur.execute(FIND_TIME_SQL).fetchone()[0]
         date = recent_date.split('T')[0]
         hour = recent_date.split('T')[1].split(':')[0]
         minute = recent_date.split('T')[1].split(':')[1]
@@ -84,12 +91,11 @@ def clean_data(interval):
             minute = str(int(minute) - 10)
             old_date = f"{date}T{hour}:{minute}"
             print(old_date)
-            sql = f'DELETE FROM drones WHERE time < "{old_date}"'
-            cur.execute(sql)
+            delete_sql = f'DELETE FROM drones WHERE time < "{old_date}"'
+            cur.execute(delete_sql)
         conn.commit()
     except:
-        print("Failed to delete entries (%s)")
-    return ""
+        print("Failed to delete entries")
 
 # update data every two second
 update_data(2)
@@ -102,14 +108,7 @@ clean_data(60)
 def index():
     conn = db_connection()
     cur = conn.cursor()
-    cur.execute("""SELECT tbl.* FROM drones tbl INNER JOIN
-    (
-    SELECT serialNumber, MIN(distFromCentre) distFromCentre
-    FROM drones
-    GROUP BY serialNumber
-    ) tbl1
-    ON tbl1.serialNumber = tbl.serialNumber
-    WHERE tbl1.distFromCentre = tbl.distFromCentre""")
+    cur.execute(FIND_VIOLATED_SQL)
     rows = cur.fetchall()
     drones = []
     for (i, row) in enumerate(rows):
