@@ -6,6 +6,7 @@ import urllib3
 import requests
 import xmltodict
 import os
+import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'MLXH243GssUWwKdTWS7FDhdwYF56wPj8'
@@ -89,15 +90,10 @@ def clean_data(interval):
     try:
         # took the max time, because the time on server can be different from the given time.
         recent_date = cur.execute(FIND_TIME_SQL).fetchone()[0]
-        date = recent_date.split('T')[0]
-        hour = recent_date.split('T')[1].split(':')[0]
-        minute = recent_date.split('T')[1].split(':')[1]
-        if minute > '11':
-            minute = str(int(minute) - 10)
-            old_date = f"{date}T{hour}:{minute}"
-            print(old_date)
-            delete_sql = f'DELETE FROM drones WHERE time < "{old_date}"'
-            cur.execute(delete_sql)
+        time = datetime.datetime.strptime(recent_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+        past_time = time - datetime.timedelta(minutes=10)
+        delete_sql = f'DELETE FROM drones WHERE time < "{past_time.strftime("%Y-%m-%dT%H:%M:%SZ")}"'
+        cur.execute(delete_sql)
         conn.commit()
     except:
         print("Failed to delete entries")
@@ -130,5 +126,5 @@ if __name__ == "__main__":
     # update data every two second
     update_data(2)
     # remove data to avoid overflow
-    clean_data(60)
+    clean_data(30)
     app.run(debug=False)
