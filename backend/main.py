@@ -2,7 +2,6 @@ import json
 from threading import Timer
 from flask import Flask, jsonify
 import sqlite3
-import urllib3
 import requests
 import xmltodict
 import os
@@ -65,10 +64,9 @@ def update_data(interval):
     cur = conn.cursor()
     cx, cy = 250000, 250000
     url = URL_DRONE
-    http = urllib3.PoolManager()
-    response = http.request('GET', url)
+    response = requests.get(url)
     try:
-        data = xmltodict.parse(response.data)
+        data = xmltodict.parse(response.content)
         for drone in data["report"]['capture']['drone']:
             posX, posY = float(drone['positionX']), float(drone['positionY'])
             timestamp = data["report"]['capture']['@snapshotTimestamp']
