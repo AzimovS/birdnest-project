@@ -5,6 +5,7 @@ import sqlite3
 import urllib3
 import requests
 import xmltodict
+import os
 
 app = Flask(__name__)
 
@@ -12,9 +13,24 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'MLXH243GssUWwKdTWS7FDhdwYF56wPj8'  # TO DO hide it
 
 def db_connection():
+
     conn = None
     try:
-        conn = sqlite3.connect('drones.db')
+        if os.path.exists('drones.db'):
+            conn = sqlite3.connect('drones.db')
+        else:
+            conn = sqlite3.connect('drones.db')
+            sql_query = """ CREATE TABLE drones (
+                serialNumber text NOT NULL,
+                posx text NOT NULL,
+                posy text NOT NULL,
+                time text NOT NULL,
+                distFromCentre text NOT NULL,
+                name text NOT NULL,
+                email text NOT NULL,
+                phoneNumber text not NULL
+            ) """
+            conn.execute(sql_query)
     except:
         print("Something went wrong with db")
     return conn
