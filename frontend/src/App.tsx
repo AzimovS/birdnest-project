@@ -19,6 +19,7 @@ const mdTheme = createTheme();
 function App() {
   const [drones, setDrones] = useState<Drone[]>([]);
   const [time, setTime] = useState(Date.now());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -26,9 +27,9 @@ function App() {
 
       getDrones().then((res) => {
         setDrones(res);
-        console.log(res);
+        setIsLoading(false);
       });
-    }, 5000);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, []);
@@ -64,8 +65,11 @@ function App() {
                   <h3>Pilots who recently violated the NDZ perimeter.</h3>
                   <p>
                     The last updated at {format(time, 'dd.MM.yyyy HH:mm:ss')}.
-                    Updates every 5 seconds
+                    Updates every 2 seconds.
                   </p>
+                  {!isLoading && drones.length === 0 && (
+                    <p>There are no drones in the NDZ perimeter.</p>
+                  )}
                   <TableData drones={drones} />
                 </Paper>
               </Grid>

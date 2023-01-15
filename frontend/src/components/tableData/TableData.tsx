@@ -1,8 +1,5 @@
 import React from 'react';
-import {
-  DataGrid,
-  GridColDef,
-} from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { Drone } from '../../types';
 
 const columns: GridColDef[] = [
@@ -48,17 +45,6 @@ const TableData: React.FC<Props> = ({ drones }) => {
       columns={columns}
       rows={drones}
       getRowId={(row: Drone) => row.serialNumber}
-      // loading={isLoading}
-      // onPageChange={onPageChange}
-      // onRowClicked={navigateToInvoice}
-      // initialState={{
-      //   sorting: {
-      //     sortModel: [{ field: 'updatedAt', sort: 'desc' }],
-      //   },
-      // }}type + row.locale
-      // sortingMode='server'
-      // onSortModelChange={onSortChange}
-      // style={{ height: '631px', width: '100%' }}
     />
   );
 };
