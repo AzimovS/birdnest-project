@@ -1,6 +1,7 @@
 import React from 'react';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { Drone } from '../../types';
+import { format } from 'date-fns';
 
 const columns: GridColDef[] = [
   {
@@ -17,6 +18,8 @@ const columns: GridColDef[] = [
     field: 'time',
     headerName: 'Detected at',
     flex: 0.5,
+    renderCell: (params: GridRenderCellParams<string>) =>
+      format(new Date(params.row.time), 'dd.MM.yyyy HH:mm:ss  '),
   },
   {
     field: 'name',
