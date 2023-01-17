@@ -18,7 +18,7 @@
 A Monadikuikka, which is a rare and endangered bird, has been observed building a nest at a nearby lake.
 However, some bird enthusiasts have been excessively eager to get a glimpse of the elusive bird, flying their drones too close to the nest and disturbing the birds in the process.
 In order to protect the nesting birds, a no-drone zone (NDZ) has been established within 100 meters of the nest. Despite this, it is suspected that some drone pilots may still be disregarding this rule. 
-This project demonstrates the detected violators for the last 10 minutes with the data provided by Reactor.
+This project demonstrates the detected violators for the last 10 minutes with the data provided by Reaktor.
 
 
 ### Requirements
@@ -48,4 +48,4 @@ This project demonstrates the detected violators for the last 10 minutes with th
 
 ## Notes
 
-- This project was created for Reactor by using provided API
+- This project was created for Reaktor by using provided API
