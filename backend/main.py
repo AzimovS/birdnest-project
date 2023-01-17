@@ -82,4 +82,4 @@ if __name__ == "__main__":
     update_data(2)
     # remove data to avoid overflow
     clean_data(3)
-    app.run(debug=False)
+    app.run(host="0.0.0.0", debug=False)
