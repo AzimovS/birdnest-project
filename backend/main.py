@@ -1,12 +1,16 @@
 import json
-from threading import Timer
 from flask import Flask, jsonify
 import requests
 import xmltodict
 import datetime
+from flask_apscheduler import APScheduler
+import atexit
+
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'MLXH243GssUWwKdTWS7FDhdwYF56wPj8'
+
 
 URL_DRONE = "https://assignments.reaktor.com/birdnest/drones"
 URL_PILOT = "https://assignments.reaktor.com/birdnest/pilots/"
@@ -25,8 +29,7 @@ def get_pilot(serialNumber):
     return f"{data['firstName']} {data['lastName']}", data['email'], data['phoneNumber']
 
 
-def update_data(interval):
-    Timer(interval, update_data, [interval]).start()
+def update_data():
     global drones_data, max_time
     cx, cy = 250000, 250000
     url = URL_DRONE
@@ -36,26 +39,25 @@ def update_data(interval):
         for drone in data["report"]['capture']['drone']:
             posX, posY = float(drone['positionX']), float(drone['positionY'])
             timestamp = data["report"]['capture']['@snapshotTimestamp']
-            distFromCentre = ((posX - cx) ** 2 + (posY - cy) ** 2) ** 0.5
-            if distFromCentre < 100000:
+            distanceFromCentre = ((posX - cx) ** 2 + (posY - cy) ** 2) ** 0.5
+            if distanceFromCentre < 100000:
                 if drone['serialNumber'] not in drones_data:
                     pilot_name, pilot_email, pilot_phoneNumber = get_pilot(
                         drone['serialNumber'])
                     drones_data[drone['serialNumber']] = {
                         "serialNumber": drone["serialNumber"],
-                        "posX": posX, "posY": posY, "time": timestamp, "distFromCentre": distFromCentre,
+                        "posX": posX, "posY": posY, "time": timestamp, "distanceFromCentre": distanceFromCentre,
                         "name": pilot_name, "email": pilot_email, "phoneNumber": pilot_phoneNumber}
-                elif drones_data[drone['serialNumber']]['distFromCentre'] > distFromCentre:
+                elif drones_data[drone['serialNumber']]['distanceFromCentre'] > distanceFromCentre:
                     drones_data[drone['serialNumber']
-                                ]['distFromCentre'] = distFromCentre
+                                ]['distanceFromCentre'] = distanceFromCentre
                     drones_data[drone['serialNumber']]['time'] = timestamp
             max_time = timestamp
     except:
         print("Failed to parse xml from response")
 
 
-def clean_data(interval):
-    Timer(interval, clean_data, [interval]).start()
+def clean_data():
     global drones_data, max_time
     try:
         # took the max time, because the time on server can be different from the given time.
@@ -76,10 +78,12 @@ def index():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+scheduler = APScheduler()
+scheduler.add_job(id = 'Scheduled Task', func=update_data, trigger="interval", seconds=3)
+scheduler.start()
 
 if __name__ == "__main__":
-    # update data every two second
-    update_data(2)
-    # remove data to avoid overflow
-    clean_data(3)
     app.run(host="0.0.0.0", debug=False)
+
+# /!\ IMPORTANT /!\ : Shut down the scheduler when exiting the app
+atexit.register(lambda: scheduler.shutdown())
