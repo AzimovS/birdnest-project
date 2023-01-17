@@ -8,6 +8,9 @@ import datetime
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'MLXH243GssUWwKdTWS7FDhdwYF56wPj8'
 
+URL_DRONE = "https://assignments.reaktor.com/birdnest/drones"
+URL_PILOT = "https://assignments.reaktor.com/birdnest/pilots/"
+
 drones_data = {}
 max_time = ""
 
